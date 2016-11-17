@@ -1,20 +1,16 @@
 #include <stdio.h>
 #include "interval.h"
-#ifndef STDINT_H
-#include <stdint.h>
-#define STDINT_H
-#endif
 
 int main( ) {
   Interval x, y, z;
 
-  x.lower = 1;
+  x.lower = 2;
   x.upper = 3;
 
-  y.lower = 4;
-  y.upper = 6;
+  y.lower = 7;
+  y.upper = 8;
 
-  z = add(x, y);
+  z = add_asm(x, y);
 
   printf("[%d;%d]\n", z.lower, z.upper);
 
