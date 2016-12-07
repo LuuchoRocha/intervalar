@@ -5,8 +5,6 @@ segment .text
 add_asm:
     PUSH  EBP
     MOV   EBP, ESP
-    PUSHA
-    PUSHF
 
     MOV   EAX, [EBP + 8]
 
@@ -18,8 +16,6 @@ add_asm:
     ADD   BX, [EBP + 18]
     MOV   [EAX+2], BX
 
-    POPF
-    POPA
     MOV   ESP, EBP
     POP   EBP
     RET
@@ -28,8 +24,6 @@ add_asm:
 sub_asm:
     PUSH  EBP
     MOV   EBP, ESP
-    PUSHA
-    PUSHF
 
     MOV   EAX, [EBP + 8]
 
@@ -41,8 +35,73 @@ sub_asm:
     SUB   BX, [EBP + 18]
     MOV   [EAX+2], BX
 
-    POPF
-    POPA
+    MOV   ESP, EBP
+    POP   EBP
+    RET
+
+
+inf_asm:
+    PUSH  EBP
+    MOV   EBP, ESP
+    XOR   EAX, EAX
+    XOR   EBX, EBX
+    XOR   ECX, ECX
+
+    MOV   EDX, [EBP + 8]
+
+    MOV   BX,  [EBP + 12]
+    MOV   CX,  [EBP + 16]
+    PUSH  EBX
+    PUSH  ECX
+    CALL  max_asm
+    ADD   ESP, 8
+    PUSH  EAX
+
+    MOV   BX,  [EBP + 14]
+    MOV   CX,  [EBP + 18]
+    PUSH  EBX
+    PUSH  ECX
+    CALL  min_asm
+    ADD   ESP, 8
+    POP   EBX
+
+    CMP   AX, BX
+    JGE   RETURN_INF
+    MOV   AX, 0
+    MOV   BX, 0
+  RETURN_INF:
+    MOV   [EDX], BX
+    MOV   [EDX+2], AX
+    MOV   ESP, EBP
+    POP   EBP
+    RET
+
+
+sup_asm:
+    PUSH  EBP
+    MOV   EBP, ESP
+    XOR   EAX, EAX
+    XOR   EBX, EBX
+    XOR   ECX, ECX
+
+    MOV   EDX, [EBP + 8]
+
+    MOV   BX,  [EBP + 12]
+    MOV   CX,  [EBP + 16]
+    PUSH  EBX
+    PUSH  ECX
+    CALL  min_asm
+    MOV   [EDX], AX
+    ADD   ESP, 8
+
+    MOV   BX,  [EBP + 14]
+    MOV   CX,  [EBP + 18]
+    PUSH  EBX
+    PUSH  ECX
+    CALL  max_asm
+    MOV   [EDX + 2], AX
+    ADD   ESP, 8
+
     MOV   ESP, EBP
     POP   EBP
     RET
@@ -51,8 +110,6 @@ sub_asm:
 min_asm:
     PUSH  EBP
     MOV   EBP, ESP
-    XOR   EAX, EAX
-
     MOV   AX, [EBP+8]
     CMP   AX, [EBP+12]
     JGE   SECOND_IS_LESSER
@@ -68,76 +125,13 @@ min_asm:
 max_asm:
     PUSH  EBP
     MOV   EBP, ESP
-    XOR   EAX, EAX
-
-    MOV   AX, [EBP+8]
-    CMP   AX, [EBP+12]
+    MOV   AX, WORD [EBP+8]
+    CMP   AX, WORD [EBP+12]
     JLE   SECOND_IS_GREATER
     JMP   RETURN_MAX
   SECOND_IS_GREATER:
     MOV   AX, [EBP+12]
   RETURN_MAX:
-    MOV   ESP, EBP
-    POP   EBP
-    RET
-
-
-inf_asm:
-    PUSH  EBP
-    MOV   EBP, ESP
-
-    MOV   EDX, [EBP + 8]
-
-    MOV   BX,  [EBP + 12]
-    MOV   CX,  [EBP + 16]
-    PUSH  BX
-    PUSH  CX
-    CALL  max_asm
-    ADD   ESP, 4
-
-    MOV   [EDX], WORD AX
-
-    MOV   BX,  [EBP + 14]
-    MOV   CX,  [EBP + 18]
-    PUSH  BX
-    PUSH  CX
-
-    CALL  min_asm
-
-    ADD   ESP, 4
-
-    MOV   [EDX + 2], WORD AX
-
-    MOV   ESP, EBP
-    POP   EBP
-    RET
-
-
-sup_asm:
-    PUSH  EBP
-    MOV   EBP, ESP
-
-    MOV   EDX, [EBP + 8]
-
-    MOV   BX,  [EBP + 12]
-    MOV   CX,  [EBP + 16]
-    PUSH  BX
-    PUSH  CX
-
-    CALL  max_asm
-    MOV   [EDX], AX
-    ADD   ESP, 4
-
-    MOV   BX,  [EBP + 14]
-    MOV   CX,  [EBP + 18]
-    PUSH  BX
-    PUSH  CX
-
-    CALL  min_asm
-    MOV   [EDX + 2], AX
-    ADD   ESP, 4
-
-
     MOV   ESP, EBP
     POP   EBP
     RET
