@@ -1,5 +1,6 @@
 segment .text
-    global    add_asm, sub_asm, mul_asm, div_asm, sup_asm, inf_asm, min_asm, max_asm
+    global    add_asm, sub_asm, mul_asm, sup_asm, inf_asm, min_asm, max_asm,
+
 
 add_asm:
     PUSH  EBP
@@ -20,9 +21,9 @@ add_asm:
     POPF
     POPA
     MOV   ESP, EBP
-    MOV   EAX, 0
     POP   EBP
     RET
+
 
 sub_asm:
     PUSH  EBP
@@ -43,9 +44,9 @@ sub_asm:
     POPF
     POPA
     MOV   ESP, EBP
-    MOV   EAX, 0
     POP   EBP
     RET
+
 
 min_asm:
     PUSH  EBP
@@ -63,6 +64,7 @@ min_asm:
     POP   EBP
     RET
 
+
 max_asm:
     PUSH  EBP
     MOV   EBP, ESP
@@ -75,6 +77,67 @@ max_asm:
   SECOND_IS_GREATER:
     MOV   AX, [EBP+12]
   RETURN_MAX:
+    MOV   ESP, EBP
+    POP   EBP
+    RET
+
+
+inf_asm:
+    PUSH  EBP
+    MOV   EBP, ESP
+
+    MOV   EDX, [EBP + 8]
+
+    MOV   BX,  [EBP + 12]
+    MOV   CX,  [EBP + 16]
+    PUSH  BX
+    PUSH  CX
+    CALL  max_asm
+    ADD   ESP, 4
+
+    MOV   [EDX], WORD AX
+
+    MOV   BX,  [EBP + 14]
+    MOV   CX,  [EBP + 18]
+    PUSH  BX
+    PUSH  CX
+
+    CALL  min_asm
+
+    ADD   ESP, 4
+
+    MOV   [EDX + 2], WORD AX
+
+    MOV   ESP, EBP
+    POP   EBP
+    RET
+
+
+sup_asm:
+    PUSH  EBP
+    MOV   EBP, ESP
+
+    MOV   EDX, [EBP + 8]
+
+    MOV   BX,  [EBP + 12]
+    MOV   CX,  [EBP + 16]
+    PUSH  BX
+    PUSH  CX
+
+    CALL  max_asm
+    MOV   [EDX], AX
+    ADD   ESP, 4
+
+    MOV   BX,  [EBP + 14]
+    MOV   CX,  [EBP + 18]
+    PUSH  BX
+    PUSH  CX
+
+    CALL  min_asm
+    MOV   [EDX + 2], AX
+    ADD   ESP, 4
+
+
     MOV   ESP, EBP
     POP   EBP
     RET
