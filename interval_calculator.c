@@ -6,10 +6,31 @@ int main( ) {
   Interval16 x, y, add, sub, inf, sup;
   Interval32 mul;
 
-  printf("=============================")
-  scanf("%" SCNd32, &x.lower);
-  scanf("%" SCNd32, &x.upper);
+  clear();
+  while (1) {
+    printf("Ingrese el limite inferior de X: ");
+    scanf("%" SCNd16, &x.lower);
+    printf("Ingrese el limite superior de X: ");
+    scanf("%" SCNd16, &x.upper);
+    if (x.lower > x.upper){
+      printf("El límite superior debe ser mayor o igual al límite inferior\n");
+    } else {
+      break;
+    }
+  }
 
+  printf("\n");
+  while (1) {
+    printf("Ingrese el limite inferior de Y: ");
+    scanf("%" SCNd16, &y.lower);
+    printf("Ingrese el limite superior de Y: ");
+    scanf("%" SCNd16, &y.upper);
+    if (y.lower > y.upper){
+      printf("El límite superior debe ser mayor o igual al límite inferior\n");
+    } else {
+      break;
+    }
+  }
   add = add_asm(x, y);
   sub = sub_asm(x, y);
   mul = mul_asm(x, y);
@@ -26,3 +47,9 @@ int main( ) {
 
   return 0;
 }
+
+void clear()
+{
+    system("@cls||clear");
+}
+
