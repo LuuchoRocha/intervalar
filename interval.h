@@ -1,13 +1,13 @@
 #include <stdint.h>
 
 typedef struct Interval16 {
-  int16_t  lower;
-  int16_t  upper;
+  int16_t lower;
+  int16_t upper;
 } Interval16;
 
 typedef struct Interval32 {
-  int32_t  lower;
-  int32_t  upper;
+  int32_t lower;
+  int32_t upper;
 } Interval32;
 
 

@@ -1,5 +1,9 @@
+segment .data
+    mensaje dw "<<< %d >>>", 10, 0
+
 segment .text
-    global    add_asm, sub_asm, mul_asm, sup_asm, inf_asm, min_asm, max_asm,
+    global    add_asm, sub_asm, mul_asm, sup_asm, inf_asm, min_asm, max_asm
+    EXTERN    printf
 
 
 add_asm:
@@ -125,78 +129,107 @@ min_asm:
 max_asm:
     PUSH  EBP
     MOV   EBP, ESP
-    MOV   AX, WORD [EBP+8]
-    CMP   AX, WORD [EBP+12]
+    MOV   AX, [EBP + 8]
+    CMP   AX, [EBP + 12]
     JLE   SECOND_IS_GREATER
     JMP   RETURN_MAX
   SECOND_IS_GREATER:
-    MOV   AX, [EBP+12]
+    MOV   AX, [EBP + 12]
   RETURN_MAX:
     MOV   ESP, EBP
     POP   EBP
     RET
 
+min32_asm:
+    PUSH  EBP
+    MOV   EBP, ESP
+    MOV   EAX, [EBP + 8]
+    CMP   EAX, [EBP + 12]
+    JGE   SECOND_IS_LESSER32
+    JMP   RETURN_MIN32
+  SECOND_IS_LESSER32:
+    MOV   EAX, [EBP+12]
+  RETURN_MIN32:
+    MOV   ESP, EBP
+    POP   EBP
+    RET
+
+max32_asm:
+    PUSH  EBP
+    MOV   EBP, ESP
+    MOV   EAX, [EBP + 8]
+    CMP   EAX, [EBP + 12]
+    JLE   SECOND_IS_GREATER32
+    JMP   RETURN_MAX32
+  SECOND_IS_GREATER32:
+    MOV   EAX, [EBP + 12]
+  RETURN_MAX32:
+    MOV   ESP, EBP
+    POP   EBP
+    RET
+
+
 mul_asm:
     PUSH  EBP
     MOV   EBP, ESP
-    XOR   EAX, EAX
+    SUB   ESP, 16
+
+    MOV   ESI, [EBP + 8]
+
     XOR   EBX, EBX
     XOR   ECX, ECX
-    XOR   EDX, EDX
 
-    MOV   EDX, [EBP + 8]
+    MOV   AX, [EBP + 12]     ;lim inf x
+    IMUL  WORD [EBP + 16]         ;DX:AX = LIM INF X * LIM INF Y
+    MOV   [EBP - 4], AX
+    MOV   [EBP - 2], DX
 
-    MOV   AX, WORD [EBP + 12]     ;lim inf x
-    MOV   BX, WORD [EBP + 16]     ;lim inf y
-    IMUL  BX                      ;DX:AX = AX * BX ***segun lei, es raro que una multip
-                                  ;entre 2 numeros de n bits, de un numero de mas de n bits
-                                  ;por lo que es posible que solo necesitemos usar AX
+    MOV   AX, [EBP + 12]     ;lim inf x
+    IMUL  WORD [EBP + 18]         ;DX:AX = LIM INF X * LIM SUP Y
+    MOV   [EBP - 8], AX
+    MOV   [EBP - 6], DX
 
-    PUSH  DX:AX                   ;esto me modifica la posicion de los otros parametros?
+    MOV   AX, [EBP + 14]     ;lim inf x
+    IMUL  WORD [EBP + 16]         ;DX:AX = LIM INF X * LIM SUP Y
+    MOV   [EBP - 12], AX
+    MOV   [EBP - 10], DX
 
-    MOV   AX, WORD [EBP + 12]     ;lim inf x.. si se movieron de lugar, deberian estar
-    MOV   BX, WORD [EBP + 18]     ;lim sup y.. en +16 y +22??
-    IMUL  BX
-    PUSH  DX:AX
+    MOV   AX, [EBP + 14]     ;lim inf x
+    IMUL  WORD [EBP + 18]         ;DX:AX = LIM INF X * LIM SUP Y
+    MOV   [EBP - 16], AX
+    MOV   [EBP - 14], DX
 
-    CALL  min_asm                 ;si comparamos numeros de 32 bits puede que se rompa,
-                                  ;ya que en la pila del min comparamos nums de 16 bits!!!
+    PUSH  DWORD [EBP - 4]
+    PUSH  DWORD [EBP - 8]
+    CALL  min32_asm
+    MOV   EDX, EAX               ;EDX = MIN DE LOS PRIMEROS 2 PRODUCTOS
 
-    MOV   ECX, EAX                ;o solo CX y AX? para guardar el min de los primeros 2 productos
-
-    CALL  max_asm
-    MOV   ESI, EAX                ;guardo el maximo de los 2 factores, uso ESI pero puedo usar cualquiera de prop gral.
-    ADD   ESP, 8                  ;desapilar los parametros, +8 O +16?
-
-    MOV   AX, WORD [EBP + 14]     ;lim sup x
-    MOV   BX, WORD [EBP + 16]     ;lim inf y
-    IMUL  BX
-    PUSH  DX:AX
-
-    MOV   AX, WORD [EBP + 14]     ;lim sup x
-    MOV   BX, WORD [EBP + 18]     ;lim sup y
-    IMUL  BX
-    PUSH  DX:AX
-
-    CALL  min_asm                  ;tengo el minimo de los segundos 2 factores
-    MOV   EDI, EAX                 ;lo guardo en el EDI asi en el EAX me queda el max
-
-    CALL  max_asm
-    ADD   ESP, 8                   ;vuelvo a desapilar los parametros
-
-    PUSH  ECX
-    PUSH  EDI                      ;pusheo los 2 minimos
-
-    CALL  min_asm                   ;en AX tengo el min de los 4 factores.
-                                   ;Este es el limite inferior del prod intervalar
+    CALL  max32_asm
+    MOV   ECX, EAX               ;ECX = MAX DE LOS PRIMEROS 2 PRODUCTOS
     ADD   ESP, 8
 
-    PUSH  ESI
+    PUSH  DWORD [EBP - 16]
+    PUSH  DWORD [EBP - 12]
+    CALL  min32_asm
+    MOV   EBX, EAX               ;EBX = MIN DE LOS SEGUNDOS 2 PRODUCTOS
+
+    CALL  max32_asm              ;EAX = MAX DE LOS SEGUNDOS 2 PRODUCTOS
+    ADD   ESP, 8
+
     PUSH  EAX
-    CALL  max_asm                  ;ahora en eax tengo el max de todos los productos
-                                   ; este es el lim sup del producto intervbalar
+    PUSH  ECX
+    CALL  max32_asm
+    MOV   ECX, EAX
+    ADD   ESP, 8
 
+    PUSH  EBX
+    PUSH  EDX
+    CALL  min32_asm
+    ADD   ESP, 8
 
+    MOV   [ESI], EAX
+    MOV   [ESI + 4], ECX
 
-
-
+    MOV   ESP, EBP
+    POP   EBP
+    RET
