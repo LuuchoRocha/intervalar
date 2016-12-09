@@ -1,35 +1,31 @@
-segment .data
-    mensaje dw "<<< %d >>>", 10, 0
-
 segment .text
     global    add_asm, sub_asm, mul_asm, sup_asm, inf_asm, min_asm, max_asm
-    EXTERN    printf
 
 
 add_asm:
     PUSH  EBP
     MOV   EBP, ESP
 
-    MOV   EAX, [EBP + 8]
+    MOV   EAX, [EBP + 8]         ;EAX contains the memory address where the result is returned
 
-    MOV   BX, [EBP + 12]
-    ADD   BX, [EBP + 16]
-    MOV   [EAX], BX
+    MOV   BX, [EBP + 12]         ;BX contains the first parameter (x.lower)
+    ADD   BX, [EBP + 16]         ;BX = x.lower + y.lower
+    MOV   [EAX], BX              ;The lower limit of the addition is put in the first 16 bits of the output address (Struct <32 bits> defined in C) 
 
-    MOV   BX, [EBP + 14]
-    ADD   BX, [EBP + 18]
-    MOV   [EAX+2], BX
+    MOV   BX, [EBP + 14]         ;BX contains x.upper
+    ADD   BX, [EBP + 18]         ;BX = x.upper + y.upper 
+    MOV   [EAX+2], BX            ;The upper limit of the addition is put in the remaining 16 bits of the output struct
 
     MOV   ESP, EBP
     POP   EBP
     RET
 
 
-sub_asm:
+sub_asm:                         ;Same as add_asm but with SUB instead off ADD
     PUSH  EBP
     MOV   EBP, ESP
 
-    MOV   EAX, [EBP + 8]
+    MOV   EAX, [EBP + 8]         
 
     MOV   BX, [EBP + 12]
     SUB   BX, [EBP + 16]
@@ -51,31 +47,31 @@ inf_asm:
     XOR   EBX, EBX
     XOR   ECX, ECX
 
-    MOV   EDX, [EBP + 8]
+    MOV   EDX, [EBP + 8]         ;EDX contains the memory address where the result is returned
 
-    MOV   BX,  [EBP + 12]
-    MOV   CX,  [EBP + 16]
+    MOV   BX,  [EBP + 12]        ;BX = x.lower
+    MOV   CX,  [EBP + 16]        ;CX = y.lower
+    PUSH  EBX                     
+    PUSH  ECX                    ;Pushing the 32 bits registers to avoid segment violation
+    CALL  max_asm                ;AX = max(x.lower, y.lower)
+    ADD   ESP, 8                 ;Unstack the parameters
+    PUSH  EAX                    ;Saving the max in the stack
+
+    MOV   BX,  [EBP + 14]        ;BX = x.upper
+    MOV   CX,  [EBP + 18]        ;CX = y.upper
     PUSH  EBX
     PUSH  ECX
-    CALL  max_asm
-    ADD   ESP, 8
-    PUSH  EAX
+    CALL  min_asm                ;AX = min(x.upper, y.upper)
+    ADD   ESP, 8                 ;Unstack the parameters
+    POP   EBX                    ;EBX = max(x.lower, y.lower)
 
-    MOV   BX,  [EBP + 14]
-    MOV   CX,  [EBP + 18]
-    PUSH  EBX
-    PUSH  ECX
-    CALL  min_asm
-    ADD   ESP, 8
-    POP   EBX
-
-    CMP   AX, BX
+    CMP   AX, BX                 ;Check: If "inf.upper">"inf.lower" then [0,0] aka "Empty" or "Invalid" is returned
     JGE   RETURN_INF
     MOV   AX, 0
     MOV   BX, 0
   RETURN_INF:
-    MOV   [EDX], BX
-    MOV   [EDX+2], AX
+    MOV   [EDX], BX              ;Else the lower limit of the INF is put in the returned struct
+    MOV   [EDX+2], AX            ;The upper limit is put in its place in the struct
     MOV   ESP, EBP
     POP   EBP
     RET
@@ -83,28 +79,28 @@ inf_asm:
 
 sup_asm:
     PUSH  EBP
-    MOV   EBP, ESP
+    MOV   EBP, ESP               
     XOR   EAX, EAX
     XOR   EBX, EBX
     XOR   ECX, ECX
 
-    MOV   EDX, [EBP + 8]
+    MOV   EDX, [EBP + 8]         ;EDX contains the memory address where the result is returned
 
-    MOV   BX,  [EBP + 12]
-    MOV   CX,  [EBP + 16]
+    MOV   BX,  [EBP + 12]        ;BX = x.lower
+    MOV   CX,  [EBP + 16]        ;CX = y.lower
     PUSH  EBX
     PUSH  ECX
-    CALL  min_asm
-    MOV   [EDX], AX
-    ADD   ESP, 8
+    CALL  min_asm                ;AX = min(x.lower, y.lower)
+    MOV   [EDX], AX              ;the lower limit of the SUP is put in the returned struct
+    ADD   ESP, 8                 ;Unstack the parameters
 
-    MOV   BX,  [EBP + 14]
-    MOV   CX,  [EBP + 18]
+    MOV   BX,  [EBP + 14]        ;BX = x.upper
+    MOV   CX,  [EBP + 18]        ;CX = y.upper
     PUSH  EBX
-    PUSH  ECX
-    CALL  max_asm
-    MOV   [EDX + 2], AX
-    ADD   ESP, 8
+    PUSH  ECX                    ;Same as "PUSH  dword [EBP + 14] PUSH  dword [EBP + 18]" but more clear 
+    CALL  max_asm                ;AX = max(x.upper, y.upper) 
+    MOV   [EDX + 2], AX          ;The upper limit of the SUP is placed in the returned struct 
+    ADD   ESP, 8                 ;Unstack the parameters
 
     MOV   ESP, EBP
     POP   EBP
@@ -114,12 +110,12 @@ sup_asm:
 min_asm:
     PUSH  EBP
     MOV   EBP, ESP
-    MOV   AX, [EBP+8]
-    CMP   AX, [EBP+12]
+    MOV   AX, [EBP + 8]          ;AX = first parameter
+    CMP   AX, [EBP + 12]         ;Compare first and second parameter
     JGE   SECOND_IS_LESSER
     JMP   RETURN_MIN
   SECOND_IS_LESSER:
-    MOV   AX, [EBP+12]
+    MOV   AX, [EBP + 12]         ;The result is returned in AX
   RETURN_MIN:
     MOV   ESP, EBP
     POP   EBP
@@ -129,18 +125,18 @@ min_asm:
 max_asm:
     PUSH  EBP
     MOV   EBP, ESP
-    MOV   AX, [EBP + 8]
-    CMP   AX, [EBP + 12]
+    MOV   AX, [EBP + 8]          ;AX = first parameter
+    CMP   AX, [EBP + 12]         ;Compare with the second parameter
     JLE   SECOND_IS_GREATER
     JMP   RETURN_MAX
   SECOND_IS_GREATER:
-    MOV   AX, [EBP + 12]
+    MOV   AX, [EBP + 12]         ;The result is returned in AX
   RETURN_MAX:
     MOV   ESP, EBP
     POP   EBP
     RET
 
-min32_asm:
+min32_asm:                       ;Same as min_asm but comparing 32 bits parameters 
     PUSH  EBP
     MOV   EBP, ESP
     MOV   EAX, [EBP + 8]
@@ -154,7 +150,7 @@ min32_asm:
     POP   EBP
     RET
 
-max32_asm:
+max32_asm:                       ;Same as max_asm but comparing 32 bits parameters 
     PUSH  EBP
     MOV   EBP, ESP
     MOV   EAX, [EBP + 8]
@@ -172,63 +168,64 @@ max32_asm:
 mul_asm:
     PUSH  EBP
     MOV   EBP, ESP
-    SUB   ESP, 16
+    SUB   ESP, 16                ;Making room for local variables that will store the products between the interval limits
 
-    MOV   ESI, [EBP + 8]
+    MOV   ESI, [EBP + 8]         ;ESI contains the memory address of the returned struct 
 
     XOR   EBX, EBX
     XOR   ECX, ECX
 
-    MOV   AX, [EBP + 12]     ;lim inf x
-    IMUL  WORD [EBP + 16]         ;DX:AX = LIM INF X * LIM INF Y
+    MOV   AX, [EBP + 12]         ;AX = x.lower
+    IMUL  WORD [EBP + 16]        ;DX:AX = x.lower * y.lower
     MOV   [EBP - 4], AX
-    MOV   [EBP - 2], DX
+    MOV   [EBP - 2], DX          ;Saving the result in the "reserved" space in the stack 
 
-    MOV   AX, [EBP + 12]     ;lim inf x
-    IMUL  WORD [EBP + 18]         ;DX:AX = LIM INF X * LIM SUP Y
+    MOV   AX, [EBP + 12]         ;AX = x.lower
+    IMUL  WORD [EBP + 18]        ;DX:AX = x.lower * y.upper
     MOV   [EBP - 8], AX
-    MOV   [EBP - 6], DX
+    MOV   [EBP - 6], DX          ;Saving the result in the "reserved" space in the stack
 
-    MOV   AX, [EBP + 14]     ;lim inf x
-    IMUL  WORD [EBP + 16]         ;DX:AX = LIM INF X * LIM SUP Y
+    MOV   AX, [EBP + 14]         ;AX = x.upper
+    IMUL  WORD [EBP + 16]        ;DX:AX = x.upper * y.lower
     MOV   [EBP - 12], AX
-    MOV   [EBP - 10], DX
+    MOV   [EBP - 10], DX         ;Saving the result in the "reserved" space in the stack
 
-    MOV   AX, [EBP + 14]     ;lim inf x
-    IMUL  WORD [EBP + 18]         ;DX:AX = LIM INF X * LIM SUP Y
+    MOV   AX, [EBP + 14]         ;AX = x.upper
+    IMUL  WORD [EBP + 18]        ;DX:AX = x.upper * y.upper
     MOV   [EBP - 16], AX
-    MOV   [EBP - 14], DX
+    MOV   [EBP - 14], DX         ;Saving the result in the "reserved" space in the stack
 
-    PUSH  DWORD [EBP - 4]
-    PUSH  DWORD [EBP - 8]
+    PUSH  DWORD [EBP - 4]        ;Pushing (x.lower * y.lower)
+    PUSH  DWORD [EBP - 8]        ;Pushing (x.lower * y.upper)
     CALL  min32_asm
-    MOV   EDX, EAX               ;EDX = MIN DE LOS PRIMEROS 2 PRODUCTOS
+    MOV   EDX, EAX               ;EDX = min of first two products
 
     CALL  max32_asm
-    MOV   ECX, EAX               ;ECX = MAX DE LOS PRIMEROS 2 PRODUCTOS
-    ADD   ESP, 8
+    MOV   ECX, EAX               ;ECX = max of first two products
+    ADD   ESP, 8                 ;Unstack the parameters
 
-    PUSH  DWORD [EBP - 16]
-    PUSH  DWORD [EBP - 12]
+    PUSH  DWORD [EBP - 16]       ;Pushing (x.upper * y.upper)
+    PUSH  DWORD [EBP - 12]       ;Pushing (x.upper * y.lower)
     CALL  min32_asm
-    MOV   EBX, EAX               ;EBX = MIN DE LOS SEGUNDOS 2 PRODUCTOS
+    MOV   EBX, EAX               ;EBX = min of the second two products
 
-    CALL  max32_asm              ;EAX = MAX DE LOS SEGUNDOS 2 PRODUCTOS
-    ADD   ESP, 8
+    CALL  max32_asm              ;EAX = max of the second two products
+    ADD   ESP, 8                 ;Unstack the parameters
 
-    PUSH  EAX
-    PUSH  ECX
+    PUSH  EAX  
+    PUSH  ECX                    ;Pushing the parcial max's 
     CALL  max32_asm
-    MOV   ECX, EAX
-    ADD   ESP, 8
+    MOV   ECX, EAX               ;ECX = max((x.lower * y.lower), (x.lower * y.upper), (x.upper * y.upper), (x.upper * y.lower))
+    ADD   ESP, 8                 ;Unstack the parameters
 
     PUSH  EBX
     PUSH  EDX
-    CALL  min32_asm
+    CALL  min32_asm              ;EAX = min((x.lower * y.lower), (x.lower * y.upper), (x.upper * y.upper), (x.upper * y.lower))
     ADD   ESP, 8
+    ADD   ESP, 8                 ;2 veces??
 
-    MOV   [ESI], EAX
-    MOV   [ESI + 4], ECX
+    MOV   [ESI], EAX             ;Placing the lower limit of mul in the returned struct
+    MOV   [ESI + 4], ECX         ;Placint the upper limit in the returned struct
 
     MOV   ESP, EBP
     POP   EBP
