@@ -50,14 +50,14 @@ int main( ) {
   sup = sup_asm(x, y);
 
   printf(BOLDCYAN "===== Números Intervalares ingresados: =====\n\n");
-  printf(BOLDGREEN "X" BOLDWHITE " = [%d, %d]\n", x.lower, x.upper);
-  printf(BOLDGREEN "Y" BOLDWHITE " = [%d, %d]\n\n", y.lower, y.upper);
-  printf(BOLDCYAN "=============== Operaciones ===============\n\n");
-  printf(BOLDYELLOW "ADD(x, y)" BOLDWHITE " = [%d, %d]\n\n", add.lower, add.upper);
-  printf(BOLDYELLOW "SUB(x, y)" BOLDWHITE " = [%d, %d]\n\n", sub.lower, sub.upper);
-  printf(BOLDYELLOW "MUL(x, y)" BOLDWHITE " = [%d, %d]\n\n", mul.lower, mul.upper);
-  printf(BOLDYELLOW "INF(x, y)" BOLDWHITE " = [%d, %d]\n\n", inf.lower, inf.upper);
-  printf(BOLDYELLOW "SUP(x, y)" BOLDWHITE " = [%d, %d]\n\n" RESET, sup.lower, sup.upper);
+  printf(BOLDGREEN "X" BOLDWHITE " = [%d; %d]\n", x.lower, x.upper);
+  printf(BOLDGREEN "Y" BOLDWHITE " = [%d; %d]\n\n", y.lower, y.upper);
+  printf(BOLDCYAN "================ Resultados ================\n\n");
+  printf(BOLDYELLOW "ADD(x, y)" BOLDWHITE " = [%d; %d]\n\n", add.lower, add.upper);
+  printf(BOLDYELLOW "SUB(x, y)" BOLDWHITE " = [%d; %d]\n\n", sub.lower, sub.upper);
+  printf(BOLDYELLOW "MUL(x, y)" BOLDWHITE " = [%d; %d]\n\n", mul.lower, mul.upper);
+  printf(BOLDYELLOW "INF(x, y)" BOLDWHITE " = [%d; %d]\n\n", inf.lower, inf.upper);
+  printf(BOLDYELLOW "SUP(x, y)" BOLDWHITE " = [%d; %d]\n\n" RESET, sup.lower, sup.upper);
 
   return 0;
 }
