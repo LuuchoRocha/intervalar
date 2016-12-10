@@ -26,6 +26,7 @@ If you want to compile only library, you can do it with:
 This will generate a file named `interval_impl.o`.
 Then if you want to include it in your program, you have to include the header:
  * `#include "interval.h"`
+
 And when compile your program the command should be like:
  * `gcc -m32 my_program.c interval_impl.o`
 
